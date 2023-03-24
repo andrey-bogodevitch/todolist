@@ -6,12 +6,12 @@ import (
 )
 
 type User struct {
-	ID         int64
-	Name       string
-	Role       string
-	Created_at time.Time
-	Login      string
-	Password   string
+	ID        int64
+	Name      string
+	Role      string
+	CreatedAt time.Time
+	Login     string
+	Password  string
 }
 
 type UserStorage struct {
@@ -42,7 +42,7 @@ func (s *UserStorage) GetUserByID(id int64) (User, error) {
 		&user.ID,
 		&user.Name,
 		&user.Role,
-		&user.Created_at,
+		&user.CreatedAt,
 		&user.Login,
 		&user.Password,
 	)

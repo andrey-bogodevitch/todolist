@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 
+	"todolist/api"
+	"todolist/service"
 	"todolist/storage"
 
 	_ "github.com/lib/pq"
@@ -35,10 +37,11 @@ func main() {
 	}
 
 	userStorage := storage.NewUserStorage(db)
-	userData, err := userStorage.GetUserByID(1)
+	userService := service.NewUser(userStorage)
+	userHandler := api.NewHandler(userService)
+	server := api.NewServer("8080", userHandler)
+	err = server.Run()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(" server run: ", err)
 	}
-	fmt.Println(userData)
-
 }
