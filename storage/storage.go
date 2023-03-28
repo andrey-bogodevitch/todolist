@@ -2,17 +2,9 @@ package storage
 
 import (
 	"database/sql"
-	"time"
-)
 
-type User struct {
-	ID        int64
-	Name      string
-	Role      string
-	CreatedAt time.Time
-	Login     string
-	Password  string
-}
+	"todolist/entity"
+)
 
 type UserStorage struct {
 	db *sql.DB
@@ -24,21 +16,39 @@ func NewUserStorage(dbpool *sql.DB) *UserStorage {
 	}
 }
 
-func (s *UserStorage) CreateUser(name, login, password string) error {
+func (s *UserStorage) CreateUser(user entity.User) error {
 	query := "INSERT INTO users (name, role, created_at, login, password) values ($1, $2, $3, $4, $5)"
-	_, err := s.db.Exec(query, name, "user", time.Now(), login, password)
+	_, err := s.db.Exec(query, user.Name, user.Role, user.CreatedAt, user.Login, user.Password)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *UserStorage) GetUserByID(id int64) (User, error) {
-	query := "SELECT id, name, role, created_at, login, password FROM users WHERE id = $1"
+func (s *UserStorage) GetUserByID(id int64) (entity.User, error) {
+	query := "SELECT id, name, role, created_at, login FROM users WHERE id = $1"
 
-	var user User
+	var user entity.User
 
 	err := s.db.QueryRow(query, id).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Role,
+		&user.CreatedAt,
+		&user.Login,
+	)
+	if err != nil {
+		return entity.User{}, err
+	}
+
+	return user, nil
+}
+func (s *UserStorage) UserByLogin(login string) (entity.User, error) {
+	query := "SELECT id, name, role, created_at, login, password FROM users WHERE login = $1"
+
+	var user entity.User
+
+	err := s.db.QueryRow(query, login).Scan(
 		&user.ID,
 		&user.Name,
 		&user.Role,
@@ -47,8 +57,17 @@ func (s *UserStorage) GetUserByID(id int64) (User, error) {
 		&user.Password,
 	)
 	if err != nil {
-		return User{}, err
+		return entity.User{}, err
 	}
 
 	return user, nil
+}
+
+func (s *UserStorage) SaveSession(session entity.Session) error {
+	query := "INSERT INTO sessions (id, user_id, created_at, expired_at) values ($1, $2, $3, $4)"
+	_, err := s.db.Exec(query, session.ID, session.UserID, session.CreatedAt, session.ExpiredAt)
+	if err != nil {
+		return err
+	}
+	return nil
 }

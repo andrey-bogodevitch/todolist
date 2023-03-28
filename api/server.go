@@ -15,6 +15,9 @@ func NewServer(port string, uh *UserHandler) *Server {
 	router := mux.NewRouter()
 	router.HandleFunc("/adduser", uh.AddUser)
 	router.HandleFunc("/getuser/{user_id}", uh.GetUser)
+	router.HandleFunc("/login", uh.Login)
+	router.HandleFunc("/delete", uh.DeleteUser)
+
 	httpServer := &http.Server{
 		Addr:    ":" + port,
 		Handler: router,
