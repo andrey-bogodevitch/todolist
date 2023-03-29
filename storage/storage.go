@@ -4,6 +4,8 @@ import (
 	"database/sql"
 
 	"todolist/entity"
+
+	"github.com/google/uuid"
 )
 
 type UserStorage struct {
@@ -66,6 +68,31 @@ func (s *UserStorage) UserByLogin(login string) (entity.User, error) {
 func (s *UserStorage) SaveSession(session entity.Session) error {
 	query := "INSERT INTO sessions (id, user_id, created_at, expired_at) values ($1, $2, $3, $4)"
 	_, err := s.db.Exec(query, session.ID, session.UserID, session.CreatedAt, session.ExpiredAt)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *UserStorage) SessionByID(id uuid.UUID) (entity.Session, error) {
+	var session entity.Session
+	query := "SELECT id, user_id, created_at, expired_at FROM sessions WHERE id = $1"
+	err := s.db.QueryRow(query, id).Scan(
+		&session.ID,
+		&session.UserID,
+		&session.CreatedAt,
+		&session.ExpiredAt,
+	)
+	if err != nil {
+		return entity.Session{}, err
+	}
+
+	return session, nil
+}
+
+func (s *UserStorage) DeleteUser(id int64) error {
+	query := "DELETE FROM users where id = $1"
+	_, err := s.db.Exec(query, id)
 	if err != nil {
 		return err
 	}
