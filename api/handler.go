@@ -19,6 +19,7 @@ type UserService interface {
 	CreateSession(login, password string) (entity.Session, error)
 	FindSessionByID(id uuid.UUID) (entity.Session, error)
 	DeleteUser(id int64) error
+	AddAdminRules(id int64) error
 }
 
 type UserHandler struct {
@@ -93,17 +94,35 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//проверить, что userid из запроса равен userid из пользователя
-	if int64(userIDInt) != user.ID {
+	if int64(userIDInt) != user.ID && user.Role != "admin" {
 		sendJsonError(w, fmt.Errorf("you can't delete other users"), http.StatusForbidden)
 		return
 	}
 
 	//вызываем метод deleteUser
-	err = h.userService.DeleteUser(user.ID)
+	err = h.userService.DeleteUser(int64(userIDInt))
 	if err != nil {
 		sendJsonError(w, err, http.StatusInternalServerError)
 		return
 	}
+}
+
+func (h *UserHandler) AddAdminRules(w http.ResponseWriter, r *http.Request) {
+	//получаем userid из запроса
+	userID := mux.Vars(r)
+	id := userID["user_id"]
+	userIDInt, err := strconv.Atoi(id)
+	if err != nil {
+		sendJsonError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	err = h.userService.AddAdminRules(int64(userIDInt))
+	if err != nil {
+		sendJsonError(w, err, http.StatusBadRequest)
+		return
+	}
+
 }
 
 func (h *UserHandler) AddUser(w http.ResponseWriter, r *http.Request) {
@@ -130,7 +149,38 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.userService.GetUser(int64(userIDInt))
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		sendJsonError(w, err, http.StatusNotFound)
+		return
+	}
+
+	cookieUUID, err := uuid.Parse(cookie.Value)
+	if err != nil {
+		sendJsonError(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	//найти сессию в БД(по ИД из куки)
+	session, err := h.userService.FindSessionByID(cookieUUID)
+	if err != nil {
+		sendJsonError(w, err, http.StatusInternalServerError)
+		return
+	}
+	// найти пользователя в базе по userid из сессии
+	user, err := h.userService.GetUser(session.UserID)
+	if err != nil {
+		sendJsonError(w, err, http.StatusNotFound)
+		return
+	}
+
+	//проверить, что userid из запроса равен userid из пользователя
+	if int64(userIDInt) != user.ID && user.Role != "admin" {
+		sendJsonError(w, fmt.Errorf("you can't get other users"), http.StatusForbidden)
+		return
+	}
+
+	user, err = h.userService.GetUser(int64(userIDInt))
 	if err != nil {
 		sendJsonError(w, err, http.StatusInternalServerError)
 	}

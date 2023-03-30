@@ -16,6 +16,7 @@ type Storage interface {
 	SaveSession(session entity.Session) error
 	SessionByID(id uuid.UUID) (entity.Session, error)
 	DeleteUser(id int64) error
+	AddAdminRules(id int64) error
 }
 
 type User struct {
@@ -94,6 +95,15 @@ func (u *User) FindSessionByID(id uuid.UUID) (entity.Session, error) {
 
 func (u *User) DeleteUser(id int64) error {
 	err := u.storage.DeleteUser(id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u *User) AddAdminRules(id int64) error {
+	err := u.storage.AddAdminRules(id)
 	if err != nil {
 		return err
 	}

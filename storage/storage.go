@@ -2,6 +2,7 @@ package storage
 
 import (
 	"database/sql"
+	"time"
 
 	"todolist/entity"
 
@@ -28,7 +29,7 @@ func (s *UserStorage) CreateUser(user entity.User) error {
 }
 
 func (s *UserStorage) GetUserByID(id int64) (entity.User, error) {
-	query := "SELECT id, name, role, created_at, login FROM users WHERE id = $1"
+	query := "SELECT id, name, role, created_at, login FROM users WHERE id = $1 AND deleted_at IS NULL"
 
 	var user entity.User
 
@@ -46,7 +47,7 @@ func (s *UserStorage) GetUserByID(id int64) (entity.User, error) {
 	return user, nil
 }
 func (s *UserStorage) UserByLogin(login string) (entity.User, error) {
-	query := "SELECT id, name, role, created_at, login, password FROM users WHERE login = $1"
+	query := "SELECT id, name, role, created_at, login, password FROM users WHERE login = $1 AND deleted_at IS NULL"
 
 	var user entity.User
 
@@ -91,8 +92,17 @@ func (s *UserStorage) SessionByID(id uuid.UUID) (entity.Session, error) {
 }
 
 func (s *UserStorage) DeleteUser(id int64) error {
-	query := "DELETE FROM users where id = $1"
-	_, err := s.db.Exec(query, id)
+	query := "UPDATE users SET deleted_at = $1 where id = $2 AND deleted_at IS NULL"
+	_, err := s.db.Exec(query, time.Now(), id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *UserStorage) AddAdminRules(id int64) error {
+	query := "UPDATE users SET role = $1 where id = $2 AND deleted_at IS NULL"
+	_, err := s.db.Exec(query, "admin", id)
 	if err != nil {
 		return err
 	}
