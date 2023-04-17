@@ -39,7 +39,8 @@ func main() {
 	userStorage := storage.NewUserStorage(db)
 	userService := service.NewUser(userStorage)
 	userHandler := api.NewHandler(userService)
-	server := api.NewServer("8080", userHandler)
+	authMW := api.NewAuthMiddleware(userService)
+	server := api.NewServer("8080", userHandler, authMW)
 	err = server.Run()
 	if err != nil {
 		log.Fatal(" server run: ", err)

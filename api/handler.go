@@ -68,30 +68,11 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie, err := r.Cookie("session_id")
-	if err != nil {
-		sendJsonError(w, err, http.StatusNotFound)
-		return
-	}
+	ctx := r.Context()
 
-	cookieUUID, err := uuid.Parse(cookie.Value)
-	if err != nil {
-		sendJsonError(w, err, http.StatusInternalServerError)
-		return
-	}
+	value := ctx.Value(ctxUserKey{})
 
-	//найти сессию в БД(по ИД из куки)
-	session, err := h.userService.FindSessionByID(cookieUUID)
-	if err != nil {
-		sendJsonError(w, err, http.StatusInternalServerError)
-		return
-	}
-	// найти пользователя в базе по userid из сессии
-	user, err := h.userService.GetUser(session.UserID)
-	if err != nil {
-		sendJsonError(w, err, http.StatusNotFound)
-		return
-	}
+	user := value.(entity.User)
 
 	//проверить, что userid из запроса равен userid из пользователя
 	if int64(userIDInt) != user.ID && user.Role != "admin" {
@@ -149,30 +130,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie, err := r.Cookie("session_id")
-	if err != nil {
-		sendJsonError(w, err, http.StatusNotFound)
-		return
-	}
-
-	cookieUUID, err := uuid.Parse(cookie.Value)
-	if err != nil {
-		sendJsonError(w, err, http.StatusInternalServerError)
-		return
-	}
-
-	//найти сессию в БД(по ИД из куки)
-	session, err := h.userService.FindSessionByID(cookieUUID)
-	if err != nil {
-		sendJsonError(w, err, http.StatusInternalServerError)
-		return
-	}
-	// найти пользователя в базе по userid из сессии
-	user, err := h.userService.GetUser(session.UserID)
-	if err != nil {
-		sendJsonError(w, err, http.StatusNotFound)
-		return
-	}
+	user := userFromCtx(r)
 
 	//проверить, что userid из запроса равен userid из пользователя
 	if int64(userIDInt) != user.ID && user.Role != "admin" {
@@ -183,6 +141,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	user, err = h.userService.GetUser(int64(userIDInt))
 	if err != nil {
 		sendJsonError(w, err, http.StatusInternalServerError)
+		return
 	}
 
 	sendJson(w, user)
@@ -208,4 +167,10 @@ func sendJson(w http.ResponseWriter, data any, code ...int) {
 	if err != nil {
 		sendJsonError(w, err, http.StatusInternalServerError)
 	}
+}
+func userFromCtx(r *http.Request) entity.User {
+	ctx := r.Context()
+	value := ctx.Value(ctxUserKey{})
+	user := value.(entity.User)
+	return user
 }

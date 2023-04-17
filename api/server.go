@@ -11,12 +11,12 @@ type Server struct {
 	http   *http.Server
 }
 
-func NewServer(port string, uh *UserHandler) *Server {
+func NewServer(port string, uh *UserHandler, mw *AuthMiddleware) *Server {
 	router := mux.NewRouter()
 	router.HandleFunc("/adduser", uh.AddUser)
-	router.HandleFunc("/getuser/{user_id}", uh.GetUser)
+	router.HandleFunc("/getuser/{user_id}", mw.Auth(uh.GetUser))
 	router.HandleFunc("/login", uh.Login)
-	router.HandleFunc("/delete/{user_id}", uh.DeleteUser)
+	router.HandleFunc("/delete/{user_id}", mw.Auth(uh.DeleteUser))
 	router.HandleFunc("/rules/{user_id}", uh.AddAdminRules)
 
 	httpServer := &http.Server{
