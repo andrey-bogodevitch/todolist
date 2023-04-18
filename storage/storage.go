@@ -108,3 +108,21 @@ func (s *UserStorage) AddAdminRules(id int64) error {
 	}
 	return nil
 }
+
+func (s *UserStorage) CreateTask(task entity.Task) error {
+	query := "INSERT INTO tasks (user_id, task, status) values ($1, $2, $3)"
+	_, err := s.db.Exec(query, task.UserID, task.Task, task.Status)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s UserStorage) UpdateTaskStatus(task entity.Task) error {
+	query := "UPDATE tasks SET status = $1 WHERE  user_id = $2 AND task = $3"
+	_, err := s.db.Exec(query, task.Status, task.UserID, task.Task)
+	if err != nil {
+		return err
+	}
+	return nil
+}

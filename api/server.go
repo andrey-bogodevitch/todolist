@@ -18,6 +18,8 @@ func NewServer(port string, uh *UserHandler, mw *AuthMiddleware) *Server {
 	router.HandleFunc("/login", uh.Login)
 	router.HandleFunc("/delete/{user_id}", mw.Auth(uh.DeleteUser))
 	router.HandleFunc("/rules/{user_id}", uh.AddAdminRules)
+	router.HandleFunc("/newtask", mw.Auth(uh.AddTask))
+	router.HandleFunc("/updatetask", mw.Auth(uh.UpdateTask))
 
 	httpServer := &http.Server{
 		Addr:    ":" + port,

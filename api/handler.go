@@ -20,6 +20,8 @@ type UserService interface {
 	FindSessionByID(id uuid.UUID) (entity.Session, error)
 	DeleteUser(id int64) error
 	AddAdminRules(id int64) error
+	AddTask(task entity.Task) error
+	UpdateTask(task entity.Task) error
 }
 
 type UserHandler struct {
@@ -173,4 +175,50 @@ func userFromCtx(r *http.Request) entity.User {
 	value := ctx.Value(ctxUserKey{})
 	user := value.(entity.User)
 	return user
+}
+
+func (h *UserHandler) AddTask(w http.ResponseWriter, r *http.Request) {
+	var req entity.Task
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		sendJsonError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	user := userFromCtx(r)
+
+	//проверить, что userid из запроса равен userid из пользователя
+	if req.UserID != user.ID {
+		sendJsonError(w, fmt.Errorf("you can add only your tasks"), http.StatusForbidden)
+		return
+	}
+
+	err = h.userService.AddTask(req)
+	if err != nil {
+		sendJsonError(w, err, http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h *UserHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
+	var req entity.Task
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		sendJsonError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	user := userFromCtx(r)
+
+	//проверить, что userid из запроса равен userid из пользователя
+	if req.UserID != user.ID {
+		sendJsonError(w, fmt.Errorf("you can add only your tasks"), http.StatusForbidden)
+		return
+	}
+
+	err = h.userService.UpdateTask(req)
+	if err != nil {
+		sendJsonError(w, err, http.StatusInternalServerError)
+		return
+	}
 }

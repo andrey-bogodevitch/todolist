@@ -17,6 +17,8 @@ type Storage interface {
 	SessionByID(id uuid.UUID) (entity.Session, error)
 	DeleteUser(id int64) error
 	AddAdminRules(id int64) error
+	CreateTask(task entity.Task) error
+	UpdateTaskStatus(task entity.Task) error
 }
 
 type User struct {
@@ -108,5 +110,21 @@ func (u *User) AddAdminRules(id int64) error {
 		return err
 	}
 
+	return nil
+}
+
+func (u *User) AddTask(task entity.Task) error {
+	err := u.storage.CreateTask(task)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (u *User) UpdateTask(task entity.Task) error {
+	err := u.storage.UpdateTaskStatus(task)
+	if err != nil {
+		return err
+	}
 	return nil
 }
