@@ -22,6 +22,7 @@ type UserService interface {
 	AddAdminRules(id int64) error
 	AddTask(task entity.Task) error
 	UpdateTask(task entity.Task) error
+	GetTasks(id int64) ([]entity.Task, error)
 }
 
 type UserHandler struct {
@@ -221,4 +222,30 @@ func (h *UserHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		sendJsonError(w, err, http.StatusInternalServerError)
 		return
 	}
+}
+
+func (h *UserHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
+	userID := mux.Vars(r)
+	id := userID["user_id"]
+	userIDInt, err := strconv.Atoi(id)
+	if err != nil {
+		sendJsonError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	user := userFromCtx(r)
+
+	//проверить, что userid из запроса равен userid из пользователя
+	if int64(userIDInt) != user.ID {
+		sendJsonError(w, fmt.Errorf("you can't get other users tasks"), http.StatusForbidden)
+		return
+	}
+
+	tasks, err := h.userService.GetTasks(int64(userIDInt))
+	if err != nil {
+		sendJsonError(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	sendJson(w, tasks)
 }

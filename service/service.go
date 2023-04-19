@@ -19,6 +19,7 @@ type Storage interface {
 	AddAdminRules(id int64) error
 	CreateTask(task entity.Task) error
 	UpdateTaskStatus(task entity.Task) error
+	GetTasksByUserID(id int64) ([]entity.Task, error)
 }
 
 type User struct {
@@ -127,4 +128,12 @@ func (u *User) UpdateTask(task entity.Task) error {
 		return err
 	}
 	return nil
+}
+
+func (u *User) GetTasks(id int64) ([]entity.Task, error) {
+	tasks, err := u.storage.GetTasksByUserID(id)
+	if err != nil {
+		return nil, err
+	}
+	return tasks, nil
 }

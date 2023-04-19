@@ -126,3 +126,25 @@ func (s UserStorage) UpdateTaskStatus(task entity.Task) error {
 	}
 	return nil
 }
+
+func (s *UserStorage) GetTasksByUserID(id int64) ([]entity.Task, error) {
+	query := "SELECT user_id, task, status FROM tasks WHERE user_id = $1"
+
+	rows, err := s.db.Query(query, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tasks []entity.Task
+
+	for rows.Next() {
+		var task entity.Task
+		err = rows.Scan(&task.UserID, &task.Task, &task.Status)
+		if err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, task)
+	}
+	return tasks, nil
+}
