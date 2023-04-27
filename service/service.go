@@ -9,6 +9,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const (
+	StatusActive    = "active"
+	StatusCompleted = "completed"
+	StatusDeleted   = "deleted"
+)
+
 type Storage interface {
 	CreateUser(user entity.User) error
 	GetUserByID(id int64) (entity.User, error)
@@ -18,8 +24,10 @@ type Storage interface {
 	DeleteUser(id int64) error
 	AddAdminRules(id int64) error
 	CreateTask(task entity.Task) error
-	UpdateTaskStatus(task entity.Task) error
+	UpdateTask(task entity.Task, status string) error
 	GetTasksByUserID(id int64) ([]entity.Task, error)
+	GetTaskByID(id int64) (entity.Task, error)
+	DeleteTask(taskID int64, status string) error
 }
 
 type User struct {
@@ -115,6 +123,7 @@ func (u *User) AddAdminRules(id int64) error {
 }
 
 func (u *User) AddTask(task entity.Task) error {
+	task.Status = StatusActive
 	err := u.storage.CreateTask(task)
 	if err != nil {
 		return err
@@ -123,7 +132,7 @@ func (u *User) AddTask(task entity.Task) error {
 }
 
 func (u *User) UpdateTask(task entity.Task) error {
-	err := u.storage.UpdateTaskStatus(task)
+	err := u.storage.UpdateTask(task, StatusCompleted)
 	if err != nil {
 		return err
 	}
@@ -136,4 +145,20 @@ func (u *User) GetTasks(id int64) ([]entity.Task, error) {
 		return nil, err
 	}
 	return tasks, nil
+}
+
+func (u *User) GetTaskByID(id int64) (entity.Task, error) {
+	task, err := u.storage.GetTaskByID(id)
+	if err != nil {
+		return entity.Task{}, err
+	}
+	return task, nil
+}
+
+func (u *User) DeleteTask(taskID int64) error {
+	err := u.storage.DeleteTask(taskID, StatusDeleted)
+	if err != nil {
+		return err
+	}
+	return nil
 }

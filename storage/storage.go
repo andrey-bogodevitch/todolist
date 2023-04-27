@@ -118,9 +118,9 @@ func (s *UserStorage) CreateTask(task entity.Task) error {
 	return nil
 }
 
-func (s UserStorage) UpdateTaskStatus(task entity.Task) error {
-	query := "UPDATE tasks SET status = $1 WHERE  user_id = $2 AND task = $3"
-	_, err := s.db.Exec(query, task.Status, task.UserID, task.Task)
+func (s *UserStorage) UpdateTask(task entity.Task, status string) error {
+	query := "UPDATE tasks SET status = $1 WHERE  id = $2"
+	_, err := s.db.Exec(query, status, task.ID)
 	if err != nil {
 		return err
 	}
@@ -128,7 +128,7 @@ func (s UserStorage) UpdateTaskStatus(task entity.Task) error {
 }
 
 func (s *UserStorage) GetTasksByUserID(id int64) ([]entity.Task, error) {
-	query := "SELECT user_id, task, status FROM tasks WHERE user_id = $1"
+	query := "SELECT id, user_id, task, status FROM tasks WHERE user_id = $1 AND deleted_at IS NULL"
 
 	rows, err := s.db.Query(query, id)
 	if err != nil {
@@ -140,11 +140,38 @@ func (s *UserStorage) GetTasksByUserID(id int64) ([]entity.Task, error) {
 
 	for rows.Next() {
 		var task entity.Task
-		err = rows.Scan(&task.UserID, &task.Task, &task.Status)
+		err = rows.Scan(&task.ID, &task.UserID, &task.Task, &task.Status)
 		if err != nil {
 			return nil, err
 		}
 		tasks = append(tasks, task)
 	}
 	return tasks, nil
+}
+
+func (s *UserStorage) GetTaskByID(id int64) (entity.Task, error) {
+	query := "SELECT id, user_id, task, status FROM tasks WHERE id = $1 AND deleted_at IS NULL"
+
+	var task entity.Task
+
+	err := s.db.QueryRow(query, id).Scan(
+		&task.ID,
+		&task.UserID,
+		&task.Task,
+		&task.Status,
+	)
+	if err != nil {
+		return entity.Task{}, err
+	}
+
+	return task, nil
+}
+
+func (s *UserStorage) DeleteTask(taskID int64, status string) error {
+	query := "UPDATE tasks SET deleted_at = $1, status = $2 WHERE  id = $3"
+	_, err := s.db.Exec(query, time.Now(), status, taskID)
+	if err != nil {
+		return err
+	}
+	return nil
 }

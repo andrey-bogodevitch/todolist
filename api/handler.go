@@ -23,6 +23,8 @@ type UserService interface {
 	AddTask(task entity.Task) error
 	UpdateTask(task entity.Task) error
 	GetTasks(id int64) ([]entity.Task, error)
+	GetTaskByID(id int64) (entity.Task, error)
+	DeleteTask(taskID int64) error
 }
 
 type UserHandler struct {
@@ -188,8 +190,10 @@ func (h *UserHandler) AddTask(w http.ResponseWriter, r *http.Request) {
 
 	user := userFromCtx(r)
 
+	req.UserID = user.ID
+
 	//проверить, что userid из запроса равен userid из пользователя
-	if req.UserID != user.ID {
+	if req.UserID != user.ID && user.Role != "admin" {
 		sendJsonError(w, fmt.Errorf("you can add only your tasks"), http.StatusForbidden)
 		return
 	}
@@ -202,8 +206,9 @@ func (h *UserHandler) AddTask(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
-	var req entity.Task
-	err := json.NewDecoder(r.Body).Decode(&req)
+	taskID := mux.Vars(r)
+	id := taskID["id"]
+	taskIDInt, err := strconv.Atoi(id)
 	if err != nil {
 		sendJsonError(w, err, http.StatusBadRequest)
 		return
@@ -211,13 +216,18 @@ func (h *UserHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 
 	user := userFromCtx(r)
 
+	task, err := h.userService.GetTaskByID(int64(taskIDInt))
+	if err != nil {
+		sendJsonError(w, err, http.StatusNotFound)
+		return
+	}
 	//проверить, что userid из запроса равен userid из пользователя
-	if req.UserID != user.ID {
-		sendJsonError(w, fmt.Errorf("you can add only your tasks"), http.StatusForbidden)
+	if task.UserID != user.ID && user.Role != "admin" {
+		sendJsonError(w, fmt.Errorf("you can update only your tasks"), http.StatusForbidden)
 		return
 	}
 
-	err = h.userService.UpdateTask(req)
+	err = h.userService.UpdateTask(task)
 	if err != nil {
 		sendJsonError(w, err, http.StatusInternalServerError)
 		return
@@ -236,7 +246,7 @@ func (h *UserHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
 	user := userFromCtx(r)
 
 	//проверить, что userid из запроса равен userid из пользователя
-	if int64(userIDInt) != user.ID {
+	if int64(userIDInt) != user.ID && user.Role != "admin" {
 		sendJsonError(w, fmt.Errorf("you can't get other users tasks"), http.StatusForbidden)
 		return
 	}
@@ -248,4 +258,35 @@ func (h *UserHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sendJson(w, tasks)
+}
+
+func (h *UserHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
+	taskID := mux.Vars(r)
+	id := taskID["id"]
+	taskIDInt, err := strconv.Atoi(id)
+	if err != nil {
+		sendJsonError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	user := userFromCtx(r)
+
+	task, err := h.userService.GetTaskByID(int64(taskIDInt))
+	if err != nil {
+		sendJsonError(w, err, http.StatusNotFound)
+		return
+	}
+
+	//проверить, что userid из запроса равен userid из пользователя
+	if task.UserID != user.ID && user.Role != "admin" {
+		sendJsonError(w, fmt.Errorf("you can't delete other users tasks"), http.StatusForbidden)
+		return
+	}
+
+	err = h.userService.DeleteTask(int64(taskIDInt))
+	if err != nil {
+		sendJsonError(w, err, http.StatusInternalServerError)
+		return
+	}
+
 }
