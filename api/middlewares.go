@@ -33,7 +33,7 @@ func (m AuthMiddleware) Auth(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		//найти сессию в БД(по ИД из куки)
+		//найти сессию в БД(по ID из cookie)
 		session, err := m.us.FindSessionByID(cookieUUID)
 		if err != nil {
 			sendJsonError(w, err, http.StatusInternalServerError)

@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
 	"strconv"
+	"unicode"
 
 	"todolist/entity"
 
@@ -64,6 +66,7 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
+
 	//получаем userid из запроса
 	userID := mux.Vars(r)
 	id := userID["user_id"]
@@ -116,6 +119,17 @@ func (h *UserHandler) AddUser(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		sendJsonError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	if isValidName(req.Name) != true {
+		sendJsonError(w, fmt.Errorf("invalid name"), http.StatusBadRequest)
+		return
+
+	}
+
+	if isValidLogin(req.Login) != true {
+		sendJsonError(w, fmt.Errorf("invalid login"), http.StatusForbidden)
 		return
 	}
 
@@ -289,4 +303,24 @@ func (h *UserHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+}
+
+func isValidName(str string) bool {
+	if len(str) < 3 || len(str) > 40 {
+		return false
+	}
+
+	for _, r := range str {
+		if !unicode.Is(unicode.Latin, r) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func isValidLogin(str string) bool {
+	const ValidSymbols = `^[a-zA-Z0-9._-]{3,15}$`
+	var IsLetter = regexp.MustCompile(ValidSymbols).MatchString
+	return IsLetter(str)
 }
