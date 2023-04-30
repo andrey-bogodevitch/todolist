@@ -129,7 +129,12 @@ func (h *UserHandler) AddUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if isValidLogin(req.Login) != true {
-		sendJsonError(w, fmt.Errorf("invalid login"), http.StatusForbidden)
+		sendJsonError(w, fmt.Errorf("invalid login"), http.StatusBadRequest)
+		return
+	}
+
+	if isValidPassword(req.Password) != true {
+		sendJsonError(w, fmt.Errorf("invalid password"), http.StatusBadRequest)
 		return
 	}
 
@@ -323,4 +328,35 @@ func isValidLogin(str string) bool {
 	const ValidSymbols = `^[a-zA-Z0-9._-]{3,15}$`
 	var IsLetter = regexp.MustCompile(ValidSymbols).MatchString
 	return IsLetter(str)
+}
+
+func isValidPassword(pass string) bool {
+	var (
+		upp, low, num bool
+		length        uint8
+	)
+
+	for _, char := range pass {
+		switch {
+		case unicode.Is(unicode.Cyrillic, char):
+			return false
+		case unicode.IsUpper(char):
+			upp = true
+			length++
+		case unicode.IsLower(char):
+			low = true
+			length++
+		case unicode.IsNumber(char):
+			num = true
+			length++
+		default:
+			return false
+		}
+	}
+
+	if !upp || !low || !num || length < 8 {
+		return false
+	}
+
+	return true
 }
