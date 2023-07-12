@@ -10,8 +10,6 @@ create table public.users
     deleted_at timestamp with time zone
 );
 
-alter table public.users
-    owner to postgres;
 
 create table public.sessions
 (
@@ -21,8 +19,6 @@ create table public.sessions
     expired_at timestamp with time zone
 );
 
-alter table public.sessions
-    owner to postgres;
 
 create table public.tasks
 (
@@ -34,5 +30,3 @@ create table public.tasks
         primary key
 );
 
-alter table public.tasks
-    owner to postgres;
