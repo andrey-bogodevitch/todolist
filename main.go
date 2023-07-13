@@ -36,7 +36,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	userStorage := storage.NewUserStorage(db)
+	cache := storage.NewRedisClient()
+	userStorage := storage.NewUserStorage(db, cache)
 	userService := service.NewUser(userStorage)
 	userHandler := api.NewHandler(userService)
 	authMW := api.NewAuthMiddleware(userService)

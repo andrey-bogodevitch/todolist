@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -18,8 +19,8 @@ import (
 type UserService interface {
 	AddUser(user entity.User) error
 	GetUser(id int64) (entity.User, error)
-	CreateSession(login, password string) (entity.Session, error)
-	FindSessionByID(id uuid.UUID) (entity.Session, error)
+	CreateSession(ctx context.Context, login, password string) (entity.Session, error)
+	FindSessionByID(ctx context.Context, id uuid.UUID) (entity.Session, error)
 	DeleteUser(id int64) error
 	AddAdminRules(id int64) error
 	AddTask(task entity.Task) error
@@ -40,6 +41,7 @@ func NewHandler(us UserService) *UserHandler {
 }
 
 func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	// create cookie, return cookie
 	type Request struct {
 		Login    string `json:"login"`
@@ -51,7 +53,7 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 		sendJsonError(w, err, http.StatusBadRequest)
 	}
 
-	session, err := h.userService.CreateSession(req.Login, req.Password)
+	session, err := h.userService.CreateSession(ctx, req.Login, req.Password)
 	if err != nil {
 		sendJsonError(w, err, http.StatusInternalServerError)
 		return

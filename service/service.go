@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"time"
 
 	"todolist/entity"
@@ -28,6 +29,8 @@ type Storage interface {
 	GetTasksByUserID(id int64) ([]entity.Task, error)
 	GetTaskByID(id int64) (entity.Task, error)
 	DeleteTask(taskID int64, status string) error
+	SaveSessionRedis(ctx context.Context, session entity.Session) error
+	SessionByIDRedis(ctx context.Context, id uuid.UUID) (entity.Session, error)
 }
 
 type User struct {
@@ -63,7 +66,7 @@ func (u *User) GetUser(id int64) (entity.User, error) {
 	return user, nil
 }
 
-func (u *User) CreateSession(login, password string) (entity.Session, error) {
+func (u *User) CreateSession(ctx context.Context, login, password string) (entity.Session, error) {
 	user, err := u.storage.UserByLogin(login)
 	if err != nil {
 		return entity.Session{}, err
@@ -87,7 +90,7 @@ func (u *User) CreateSession(login, password string) (entity.Session, error) {
 		ExpiredAt: now.Add(10 * time.Minute),
 	}
 
-	err = u.storage.SaveSession(session)
+	err = u.storage.SaveSessionRedis(ctx, session)
 	if err != nil {
 		return entity.Session{}, err
 	}
@@ -95,8 +98,8 @@ func (u *User) CreateSession(login, password string) (entity.Session, error) {
 	return session, nil
 }
 
-func (u *User) FindSessionByID(id uuid.UUID) (entity.Session, error) {
-	session, err := u.storage.SessionByID(id)
+func (u *User) FindSessionByID(ctx context.Context, id uuid.UUID) (entity.Session, error) {
+	session, err := u.storage.SessionByIDRedis(ctx, id)
 	if err != nil {
 		return entity.Session{}, err
 	}

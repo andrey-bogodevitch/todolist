@@ -34,7 +34,8 @@ func (m AuthMiddleware) Auth(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		//найти сессию в БД(по ID из cookie)
-		session, err := m.us.FindSessionByID(cookieUUID)
+		ctx := r.Context()
+		session, err := m.us.FindSessionByID(ctx, cookieUUID)
 		if err != nil {
 			sendJsonError(w, err, http.StatusInternalServerError)
 			return
@@ -46,7 +47,7 @@ func (m AuthMiddleware) Auth(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), ctxUserKey{}, user)
+		ctx = context.WithValue(ctx, ctxUserKey{}, user)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	}
