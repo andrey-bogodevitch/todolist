@@ -12,10 +12,10 @@ import (
 
 type UserStorage struct {
 	db    *sql.DB
-	cache *redis.Client
+	cache redis.UniversalClient
 }
 
-func NewUserStorage(dbpool *sql.DB, redis *redis.Client) *UserStorage {
+func NewUserStorage(dbpool *sql.DB, redis redis.UniversalClient) *UserStorage {
 	return &UserStorage{
 		db:    dbpool,
 		cache: redis,

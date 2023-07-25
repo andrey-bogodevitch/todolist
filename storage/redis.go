@@ -3,21 +3,32 @@ package storage
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+	"strings"
 	"time"
+	"todolist/config"
 	"todolist/entity"
 )
 
-func NewRedisClient() *redis.Client {
-	rdb := redis.NewClient(
+func NewRedisClient(cfg config.Config) redis.UniversalClient {
+	if cfg.RedisDriver == `sentinel` {
+		return redis.NewFailoverClusterClient(&redis.FailoverOptions{
+			MasterName:    cfg.RedisMasterName,
+			SentinelAddrs: []string{cfg.RedisHost + `:` + cfg.RedisPort},
+			Password:      strings.TrimSpace(cfg.RedisPassword),
+			DB:            cfg.RedisUseDefaultDB,
+		})
+	}
+
+	return redis.NewClient(
 		&redis.Options{
-			Addr:     "localhost:16379",
-			Password: "", // no password set
-			DB:       0,  // use default DB
+			Addr:     fmt.Sprintf("%v:%v", cfg.RedisHost, cfg.RedisPort),
+			Password: cfg.RedisPassword,
+			DB:       cfg.RedisUseDefaultDB,
 		},
 	)
-	return rdb
 }
 
 func (u *UserStorage) SaveSessionRedis(ctx context.Context, session entity.Session) error {

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"todolist/config"
 
 	"todolist/api"
 	"todolist/service"
@@ -21,6 +22,11 @@ const (
 )
 
 func main() {
+	cfg, err := config.ParseConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	psqlInfo := fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname,
@@ -36,7 +42,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	cache := storage.NewRedisClient()
+	cache := storage.NewRedisClient(cfg)
 	userStorage := storage.NewUserStorage(db, cache)
 	userService := service.NewUser(userStorage)
 	userHandler := api.NewHandler(userService)
