@@ -6,12 +6,13 @@ import (
 )
 
 type Config struct {
-	RedisHost         string `env:"REDIS_HOST" required:"true"`
-	RedisPort         string `env:"REDIS_PORT" required:"true"`
-	RedisPassword     string `env:"REDIS_PASSWORD" required:"true"`
-	RedisDriver       string `env:"REDIS_DRIVER" required:"true"`
-	RedisMasterName   string `env:"REDIS_MASTER_NAME"`
-	RedisUseDefaultDB int    `env:"REDIS_USE_DEFAULT_DB" required:"true"`
+	RedisAddr         string   `env:"REDIS_ADDR" required:"true"`
+	RedisSentinelAddr []string `env:"REDIS_SENTINEL_ADDR" required:"true"`
+	RedisClusterPorts []string `env:"REDIS_CLUSTER_PORTS" required:"true"`
+	RedisPassword     string   `env:"REDIS_PASSWORD" required:"true"`
+	RedisDriver       string   `env:"REDIS_DRIVER" required:"true"`
+	RedisMasterName   string   `env:"REDIS_MASTER_NAME"`
+	RedisUseDefaultDB int      `env:"REDIS_USE_DEFAULT_DB" required:"true"`
 }
 
 func ParseConfig() (Config, error) {

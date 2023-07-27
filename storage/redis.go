@@ -3,28 +3,48 @@ package storage
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
-	"strings"
 	"time"
 	"todolist/config"
 	"todolist/entity"
 )
 
-func NewRedisClient(cfg config.Config) redis.UniversalClient {
-	if cfg.RedisDriver == `sentinel` {
-		return redis.NewFailoverClusterClient(&redis.FailoverOptions{
-			MasterName:    cfg.RedisMasterName,
-			SentinelAddrs: []string{cfg.RedisHost + `:` + cfg.RedisPort},
-			Password:      strings.TrimSpace(cfg.RedisPassword),
-			DB:            cfg.RedisUseDefaultDB,
-		})
+func NewRedisClient(cfg config.Config) (c redis.UniversalClient, err error) {
+	switch cfg.RedisDriver {
+	case "sentinel":
+		c = SentinelRedisClient(cfg)
+	case "cluster":
+		c = ClusterRedisClient(cfg)
+	default:
+		c = RedisClient(cfg)
 	}
 
+	err = c.Ping(context.Background()).Err()
+
+	return c, err
+}
+
+func SentinelRedisClient(cfg config.Config) *redis.ClusterClient {
+	return redis.NewFailoverClusterClient(&redis.FailoverOptions{
+		MasterName:    cfg.RedisMasterName,
+		SentinelAddrs: cfg.RedisSentinelAddr,
+		Password:      cfg.RedisPassword,
+		DB:            cfg.RedisUseDefaultDB,
+	})
+}
+
+func ClusterRedisClient(cfg config.Config) *redis.ClusterClient {
+	return redis.NewClusterClient(&redis.ClusterOptions{
+		Addrs:    cfg.RedisClusterPorts,
+		Password: cfg.RedisPassword,
+	})
+}
+
+func RedisClient(cfg config.Config) *redis.Client {
 	return redis.NewClient(
 		&redis.Options{
-			Addr:     fmt.Sprintf("%v:%v", cfg.RedisHost, cfg.RedisPort),
+			Addr:     cfg.RedisAddr,
 			Password: cfg.RedisPassword,
 			DB:       cfg.RedisUseDefaultDB,
 		},

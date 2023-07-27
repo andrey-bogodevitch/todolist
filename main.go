@@ -42,7 +42,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	cache := storage.NewRedisClient(cfg)
+	cache, err := storage.NewRedisClient(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	userStorage := storage.NewUserStorage(db, cache)
 	userService := service.NewUser(userStorage)
 	userHandler := api.NewHandler(userService)
