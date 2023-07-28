@@ -4,8 +4,7 @@ import (
 	"database/sql"
 	"github.com/redis/go-redis/v9"
 	"time"
-
-	"todolist/entity"
+	entity2 "todolist/internal/entity"
 
 	"github.com/google/uuid"
 )
@@ -22,7 +21,7 @@ func NewUserStorage(dbpool *sql.DB, redis redis.UniversalClient) *UserStorage {
 	}
 }
 
-func (u *UserStorage) CreateUser(user entity.User) error {
+func (u *UserStorage) CreateUser(user entity2.User) error {
 	query := "INSERT INTO users (name, role, created_at, login, password) values ($1, $2, $3, $4, $5)"
 	_, err := u.db.Exec(query, user.Name, user.Role, user.CreatedAt, user.Login, user.Password)
 	if err != nil {
@@ -31,10 +30,10 @@ func (u *UserStorage) CreateUser(user entity.User) error {
 	return nil
 }
 
-func (u *UserStorage) GetUserByID(id int64) (entity.User, error) {
+func (u *UserStorage) GetUserByID(id int64) (entity2.User, error) {
 	query := "SELECT id, name, role, created_at, login FROM users WHERE id = $1 AND deleted_at IS NULL"
 
-	var user entity.User
+	var user entity2.User
 
 	err := u.db.QueryRow(query, id).Scan(
 		&user.ID,
@@ -44,15 +43,15 @@ func (u *UserStorage) GetUserByID(id int64) (entity.User, error) {
 		&user.Login,
 	)
 	if err != nil {
-		return entity.User{}, err
+		return entity2.User{}, err
 	}
 
 	return user, nil
 }
-func (u *UserStorage) UserByLogin(login string) (entity.User, error) {
+func (u *UserStorage) UserByLogin(login string) (entity2.User, error) {
 	query := "SELECT id, name, role, created_at, login, password FROM users WHERE login = $1 AND deleted_at IS NULL"
 
-	var user entity.User
+	var user entity2.User
 
 	err := u.db.QueryRow(query, login).Scan(
 		&user.ID,
@@ -63,13 +62,13 @@ func (u *UserStorage) UserByLogin(login string) (entity.User, error) {
 		&user.Password,
 	)
 	if err != nil {
-		return entity.User{}, err
+		return entity2.User{}, err
 	}
 
 	return user, nil
 }
 
-func (u *UserStorage) SaveSession(session entity.Session) error {
+func (u *UserStorage) SaveSession(session entity2.Session) error {
 	query := "INSERT INTO sessions (id, user_id, created_at, expired_at) values ($1, $2, $3, $4)"
 	_, err := u.db.Exec(query, session.ID, session.UserID, session.CreatedAt, session.ExpiredAt)
 	if err != nil {
@@ -78,8 +77,8 @@ func (u *UserStorage) SaveSession(session entity.Session) error {
 	return nil
 }
 
-func (u *UserStorage) SessionByID(id uuid.UUID) (entity.Session, error) {
-	var session entity.Session
+func (u *UserStorage) SessionByID(id uuid.UUID) (entity2.Session, error) {
+	var session entity2.Session
 	query := "SELECT id, user_id, created_at, expired_at FROM sessions WHERE id = $1"
 	err := u.db.QueryRow(query, id).Scan(
 		&session.ID,
@@ -88,7 +87,7 @@ func (u *UserStorage) SessionByID(id uuid.UUID) (entity.Session, error) {
 		&session.ExpiredAt,
 	)
 	if err != nil {
-		return entity.Session{}, err
+		return entity2.Session{}, err
 	}
 
 	return session, nil
@@ -112,7 +111,7 @@ func (u *UserStorage) AddAdminRules(id int64) error {
 	return nil
 }
 
-func (u *UserStorage) CreateTask(task entity.Task) error {
+func (u *UserStorage) CreateTask(task entity2.Task) error {
 	query := "INSERT INTO tasks (user_id, task, status) values ($1, $2, $3)"
 	_, err := u.db.Exec(query, task.UserID, task.Task, task.Status)
 	if err != nil {
@@ -121,7 +120,7 @@ func (u *UserStorage) CreateTask(task entity.Task) error {
 	return nil
 }
 
-func (u *UserStorage) UpdateTask(task entity.Task, status string) error {
+func (u *UserStorage) UpdateTask(task entity2.Task, status string) error {
 	query := "UPDATE tasks SET status = $1 WHERE  id = $2"
 	_, err := u.db.Exec(query, status, task.ID)
 	if err != nil {
@@ -130,7 +129,7 @@ func (u *UserStorage) UpdateTask(task entity.Task, status string) error {
 	return nil
 }
 
-func (u *UserStorage) GetTasksByUserID(id int64) ([]entity.Task, error) {
+func (u *UserStorage) GetTasksByUserID(id int64) ([]entity2.Task, error) {
 	query := "SELECT id, user_id, task, status FROM tasks WHERE user_id = $1 AND deleted_at IS NULL"
 
 	rows, err := u.db.Query(query, id)
@@ -139,10 +138,10 @@ func (u *UserStorage) GetTasksByUserID(id int64) ([]entity.Task, error) {
 	}
 	defer rows.Close()
 
-	var tasks []entity.Task
+	var tasks []entity2.Task
 
 	for rows.Next() {
-		var task entity.Task
+		var task entity2.Task
 		err = rows.Scan(&task.ID, &task.UserID, &task.Task, &task.Status)
 		if err != nil {
 			return nil, err
@@ -152,10 +151,10 @@ func (u *UserStorage) GetTasksByUserID(id int64) ([]entity.Task, error) {
 	return tasks, nil
 }
 
-func (u *UserStorage) GetTaskByID(id int64) (entity.Task, error) {
+func (u *UserStorage) GetTaskByID(id int64) (entity2.Task, error) {
 	query := "SELECT id, user_id, task, status FROM tasks WHERE id = $1 AND deleted_at IS NULL"
 
-	var task entity.Task
+	var task entity2.Task
 
 	err := u.db.QueryRow(query, id).Scan(
 		&task.ID,
@@ -164,7 +163,7 @@ func (u *UserStorage) GetTaskByID(id int64) (entity.Task, error) {
 		&task.Status,
 	)
 	if err != nil {
-		return entity.Task{}, err
+		return entity2.Task{}, err
 	}
 
 	return task, nil

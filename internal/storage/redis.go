@@ -6,8 +6,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"time"
-	"todolist/config"
-	"todolist/entity"
+	"todolist/internal/config"
+	"todolist/internal/entity"
 )
 
 func NewRedisClient(cfg config.Config) (c redis.UniversalClient, err error) {
@@ -28,7 +28,7 @@ func NewRedisClient(cfg config.Config) (c redis.UniversalClient, err error) {
 func SentinelRedisClient(cfg config.Config) *redis.ClusterClient {
 	return redis.NewFailoverClusterClient(&redis.FailoverOptions{
 		MasterName:    cfg.RedisMasterName,
-		SentinelAddrs: cfg.RedisSentinelAddr,
+		SentinelAddrs: cfg.RedisAddr,
 		Password:      cfg.RedisPassword,
 		DB:            cfg.RedisUseDefaultDB,
 	})
@@ -36,7 +36,7 @@ func SentinelRedisClient(cfg config.Config) *redis.ClusterClient {
 
 func ClusterRedisClient(cfg config.Config) *redis.ClusterClient {
 	return redis.NewClusterClient(&redis.ClusterOptions{
-		Addrs:    cfg.RedisClusterPorts,
+		Addrs:    cfg.RedisAddr,
 		Password: cfg.RedisPassword,
 	})
 }
@@ -44,7 +44,7 @@ func ClusterRedisClient(cfg config.Config) *redis.ClusterClient {
 func RedisClient(cfg config.Config) *redis.Client {
 	return redis.NewClient(
 		&redis.Options{
-			Addr:     cfg.RedisAddr,
+			Addr:     cfg.RedisAddr[0],
 			Password: cfg.RedisPassword,
 			DB:       cfg.RedisUseDefaultDB,
 		},
@@ -65,15 +65,16 @@ func (u *UserStorage) SaveSessionRedis(ctx context.Context, session entity.Sessi
 	return nil
 }
 
-func (u *UserStorage) SessionByIDRedis(ctx context.Context, id uuid.UUID) (entity.Session, error) {
-	var session entity.Session
-
+func (u *UserStorage) SessionByIDRedis(ctx context.Context, id uuid.UUID) (session entity.Session, err error) {
 	res, err := u.cache.Get(ctx, id.String()).Bytes()
 	if err != nil {
-		return entity.Session{}, err
+		return session, err
 	}
 
 	err = json.Unmarshal(res, &session)
+	if err != nil {
+		return session, err
+	}
 
 	return session, nil
 }

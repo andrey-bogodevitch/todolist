@@ -6,9 +6,7 @@ import (
 )
 
 type Config struct {
-	RedisAddr         string   `env:"REDIS_ADDR" required:"true"`
-	RedisSentinelAddr []string `env:"REDIS_SENTINEL_ADDR" required:"true"`
-	RedisClusterPorts []string `env:"REDIS_CLUSTER_PORTS" required:"true"`
+	RedisAddr         []string `env:"REDIS_ADDR" required:"true"`
 	RedisPassword     string   `env:"REDIS_PASSWORD" required:"true"`
 	RedisDriver       string   `env:"REDIS_DRIVER" required:"true"`
 	RedisMasterName   string   `env:"REDIS_MASTER_NAME"`

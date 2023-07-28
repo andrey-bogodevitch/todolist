@@ -4,11 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"todolist/config"
-
-	"todolist/api"
-	"todolist/service"
-	"todolist/storage"
+	api "todolist/internal/api"
+	"todolist/internal/config"
+	"todolist/internal/service"
+	storage "todolist/internal/storage"
 
 	_ "github.com/lib/pq"
 )
@@ -41,13 +40,15 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer db.Close()
 
-	cache, err := storage.NewRedisClient(cfg)
+	redisClient, err := storage.NewRedisClient(cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer redisClient.Close()
 
-	userStorage := storage.NewUserStorage(db, cache)
+	userStorage := storage.NewUserStorage(db, redisClient)
 	userService := service.NewUser(userStorage)
 	userHandler := api.NewHandler(userService)
 	authMW := api.NewAuthMiddleware(userService)

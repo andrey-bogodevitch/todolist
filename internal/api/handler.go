@@ -8,25 +8,24 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	entity2 "todolist/internal/entity"
 	"unicode"
-
-	"todolist/entity"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
 type UserService interface {
-	AddUser(user entity.User) error
-	GetUser(id int64) (entity.User, error)
-	CreateSession(ctx context.Context, login, password string) (entity.Session, error)
-	FindSessionByID(ctx context.Context, id uuid.UUID) (entity.Session, error)
+	AddUser(user entity2.User) error
+	GetUser(id int64) (entity2.User, error)
+	CreateSession(ctx context.Context, login, password string) (entity2.Session, error)
+	FindSessionByID(ctx context.Context, id uuid.UUID) (entity2.Session, error)
 	DeleteUser(id int64) error
 	AddAdminRules(id int64) error
-	AddTask(task entity.Task) error
-	UpdateTask(task entity.Task) error
-	GetTasks(id int64) ([]entity.Task, error)
-	GetTaskByID(id int64) (entity.Task, error)
+	AddTask(task entity2.Task) error
+	UpdateTask(task entity2.Task) error
+	GetTasks(id int64) ([]entity2.Task, error)
+	GetTaskByID(id int64) (entity2.Task, error)
 	DeleteTask(taskID int64) error
 }
 
@@ -82,7 +81,7 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	value := ctx.Value(ctxUserKey{})
 
-	user := value.(entity.User)
+	user := value.(entity2.User)
 
 	//проверить, что userid из запроса равен userid из пользователя
 	if int64(userIDInt) != user.ID && user.Role != "admin" {
@@ -117,7 +116,7 @@ func (h *UserHandler) AddAdminRules(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) AddUser(w http.ResponseWriter, r *http.Request) {
-	var req entity.User
+	var req entity2.User
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		sendJsonError(w, err, http.StatusBadRequest)
@@ -194,15 +193,15 @@ func sendJson(w http.ResponseWriter, data any, code ...int) {
 		sendJsonError(w, err, http.StatusInternalServerError)
 	}
 }
-func userFromCtx(r *http.Request) entity.User {
+func userFromCtx(r *http.Request) entity2.User {
 	ctx := r.Context()
 	value := ctx.Value(ctxUserKey{})
-	user := value.(entity.User)
+	user := value.(entity2.User)
 	return user
 }
 
 func (h *UserHandler) AddTask(w http.ResponseWriter, r *http.Request) {
-	var req entity.Task
+	var req entity2.Task
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		sendJsonError(w, err, http.StatusBadRequest)

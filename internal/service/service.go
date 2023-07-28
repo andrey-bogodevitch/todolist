@@ -3,8 +3,7 @@ package service
 import (
 	"context"
 	"time"
-
-	"todolist/entity"
+	entity2 "todolist/internal/entity"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -17,20 +16,20 @@ const (
 )
 
 type Storage interface {
-	CreateUser(user entity.User) error
-	GetUserByID(id int64) (entity.User, error)
-	UserByLogin(login string) (entity.User, error)
-	SaveSession(session entity.Session) error
-	SessionByID(id uuid.UUID) (entity.Session, error)
+	CreateUser(user entity2.User) error
+	GetUserByID(id int64) (entity2.User, error)
+	UserByLogin(login string) (entity2.User, error)
+	SaveSession(session entity2.Session) error
+	SessionByID(id uuid.UUID) (entity2.Session, error)
 	DeleteUser(id int64) error
 	AddAdminRules(id int64) error
-	CreateTask(task entity.Task) error
-	UpdateTask(task entity.Task, status string) error
-	GetTasksByUserID(id int64) ([]entity.Task, error)
-	GetTaskByID(id int64) (entity.Task, error)
+	CreateTask(task entity2.Task) error
+	UpdateTask(task entity2.Task, status string) error
+	GetTasksByUserID(id int64) ([]entity2.Task, error)
+	GetTaskByID(id int64) (entity2.Task, error)
 	DeleteTask(taskID int64, status string) error
-	SaveSessionRedis(ctx context.Context, session entity.Session) error
-	SessionByIDRedis(ctx context.Context, id uuid.UUID) (entity.Session, error)
+	SaveSessionRedis(ctx context.Context, session entity2.Session) error
+	SessionByIDRedis(ctx context.Context, id uuid.UUID) (entity2.Session, error)
 }
 
 type User struct {
@@ -41,7 +40,7 @@ func NewUser(s Storage) *User {
 	return &User{storage: s}
 }
 
-func (u *User) AddUser(user entity.User) error {
+func (u *User) AddUser(user entity2.User) error {
 	passwordByte := []byte(user.Password)
 	hash, err := bcrypt.GenerateFromPassword(passwordByte, 10)
 	if err != nil {
@@ -58,32 +57,32 @@ func (u *User) AddUser(user entity.User) error {
 	return nil
 }
 
-func (u *User) GetUser(id int64) (entity.User, error) {
+func (u *User) GetUser(id int64) (entity2.User, error) {
 	user, err := u.storage.GetUserByID(id)
 	if err != nil {
-		return entity.User{}, err
+		return entity2.User{}, err
 	}
 	return user, nil
 }
 
-func (u *User) CreateSession(ctx context.Context, login, password string) (entity.Session, error) {
+func (u *User) CreateSession(ctx context.Context, login, password string) (entity2.Session, error) {
 	user, err := u.storage.UserByLogin(login)
 	if err != nil {
-		return entity.Session{}, err
+		return entity2.Session{}, err
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
-		return entity.Session{}, err
+		return entity2.Session{}, err
 	}
 
 	sessionID, err := uuid.NewUUID()
 	if err != nil {
-		return entity.Session{}, err
+		return entity2.Session{}, err
 	}
 
 	now := time.Now()
-	session := entity.Session{
+	session := entity2.Session{
 		ID:        sessionID,
 		UserID:    user.ID,
 		CreatedAt: now,
@@ -92,16 +91,16 @@ func (u *User) CreateSession(ctx context.Context, login, password string) (entit
 
 	err = u.storage.SaveSessionRedis(ctx, session)
 	if err != nil {
-		return entity.Session{}, err
+		return entity2.Session{}, err
 	}
 
 	return session, nil
 }
 
-func (u *User) FindSessionByID(ctx context.Context, id uuid.UUID) (entity.Session, error) {
+func (u *User) FindSessionByID(ctx context.Context, id uuid.UUID) (entity2.Session, error) {
 	session, err := u.storage.SessionByIDRedis(ctx, id)
 	if err != nil {
-		return entity.Session{}, err
+		return entity2.Session{}, err
 	}
 
 	return session, nil
@@ -125,7 +124,7 @@ func (u *User) AddAdminRules(id int64) error {
 	return nil
 }
 
-func (u *User) AddTask(task entity.Task) error {
+func (u *User) AddTask(task entity2.Task) error {
 	task.Status = StatusActive
 	err := u.storage.CreateTask(task)
 	if err != nil {
@@ -134,7 +133,7 @@ func (u *User) AddTask(task entity.Task) error {
 	return nil
 }
 
-func (u *User) UpdateTask(task entity.Task) error {
+func (u *User) UpdateTask(task entity2.Task) error {
 	err := u.storage.UpdateTask(task, StatusCompleted)
 	if err != nil {
 		return err
@@ -142,7 +141,7 @@ func (u *User) UpdateTask(task entity.Task) error {
 	return nil
 }
 
-func (u *User) GetTasks(id int64) ([]entity.Task, error) {
+func (u *User) GetTasks(id int64) ([]entity2.Task, error) {
 	tasks, err := u.storage.GetTasksByUserID(id)
 	if err != nil {
 		return nil, err
@@ -150,10 +149,10 @@ func (u *User) GetTasks(id int64) ([]entity.Task, error) {
 	return tasks, nil
 }
 
-func (u *User) GetTaskByID(id int64) (entity.Task, error) {
+func (u *User) GetTaskByID(id int64) (entity2.Task, error) {
 	task, err := u.storage.GetTaskByID(id)
 	if err != nil {
-		return entity.Task{}, err
+		return entity2.Task{}, err
 	}
 	return task, nil
 }

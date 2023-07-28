@@ -36,21 +36,6 @@ services:
     networks:
       - app-tier
 
-#  redis:
-#    image: 'bitnami/redis:latest'
-#    environment:
-#      - ALLOW_EMPTY_PASSWORD=yes
-#    networks:
-#      - app-tier
-#  redis-sentinel:
-#    image: 'bitnami/redis-sentinel:latest'
-#    environment:
-#      - REDIS_MASTER_HOST=redis
-#    ports:
-#      - '26379:26379'
-#    networks:
-#      - app-tier
-
   postgres:
     container_name: postgres_todolist
     image: postgres:14
@@ -132,7 +117,6 @@ services:
       - 'REDIS_CLUSTER_CREATOR=yes'
     ports:
       - "6385:6379"
-
 
 volumes:
   postgres:
